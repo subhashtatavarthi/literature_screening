@@ -1,0 +1,11 @@
+UI,Title,DOI
+UI001,Attention Is All You Need,10.48550/arXiv.1706.03762
+UI002,BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,10.48550/arXiv.1810.04805
+UI003,Deep Residual Learning for Image Recognition,10.1109/CVPR.2016.90
+UI004,ImageNet Large Scale Visual Recognition Challenge,10.1007/s11263-015-0816-y
+UI005,Dropout: A Simple Way to Prevent Neural Networks from Overfitting,10.5555/2627435.2670313
+UI006,Batch Normalization: Accelerating Deep Network Training,10.48550/arXiv.1502.03167
+UI007,Attention Is All You Need,10.48550/arXiv.1706.03762
+UI008,A Survey on Transfer Learning,10.1109/TKDE.2009.191
+UI009,Deep Residual Learning for Image Recognition,10.1109/CVPR.2016.90
+UI010,Generative Adversarial Nets,10.48550/arXiv.1406.2661
