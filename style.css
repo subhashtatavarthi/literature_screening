@@ -27,6 +27,14 @@
   --yellow-dup-border: #f5d96e;
   --yellow-dup-text: #6b5900;
 
+  --orange-dup: #ffe0cc;
+  --orange-dup-border: #f5a36e;
+  --orange-dup-text: #6b2f00;
+
+  --gray-master: #2a2d38;
+  --gray-master-border: rgba(255,255,255,0.12);
+  --gray-master-text: #8a8fa3;
+
   --green: #34d399;
   --green-bg: rgba(52, 211, 153, 0.12);
   --orange: #fb923c;
@@ -116,7 +124,20 @@ body {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 1.5rem; align-items: start;
 }
-@media (max-width: 768px) { .upload-row { grid-template-columns: 1fr; } }
+.upload-row.three-col {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+@media (max-width: 960px) { .upload-row.three-col { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .upload-row, .upload-row.three-col { grid-template-columns: 1fr; } }
+.dropzone-label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+.dropzone-label .optional-tag {
+  font-weight: 400; color: var(--text-muted); text-transform: none;
+  letter-spacing: normal;
+}
 
 .dropzone {
   border: 2px dashed var(--border); border-radius: var(--radius);
@@ -289,11 +310,27 @@ tbody td {
   vertical-align: top;
 }
 
-/* ===== DUPLICATE ROW HIGHLIGHT ===== */
+/* ===== ROW HIGHLIGHTS ===== */
+/* Yellow — batch duplicate (within new input) */
+tbody tr.batch-dup-row { background: var(--yellow-dup) !important; }
+tbody tr.batch-dup-row td { color: var(--yellow-dup-text) !important; }
+tbody tr.batch-dup-row:hover { background: #ffecaa !important; }
+tbody tr.batch-dup-row .badge { border-color: var(--yellow-dup-border); }
+/* Keep legacy class */
 tbody tr.duplicate-row { background: var(--yellow-dup) !important; }
 tbody tr.duplicate-row td { color: var(--yellow-dup-text) !important; }
 tbody tr.duplicate-row:hover { background: #ffecaa !important; }
-tbody tr.duplicate-row .badge { border-color: var(--yellow-dup-border); }
+
+/* Orange — already in master */
+tbody tr.master-dup-row { background: var(--orange-dup) !important; }
+tbody tr.master-dup-row td { color: var(--orange-dup-text) !important; }
+tbody tr.master-dup-row:hover { background: #ffd1aa !important; }
+tbody tr.master-dup-row .badge { border-color: var(--orange-dup-border); }
+
+/* Gray — existing master entry */
+tbody tr.master-row { background: var(--gray-master) !important; }
+tbody tr.master-row td { color: var(--gray-master-text) !important; }
+tbody tr.master-row:hover { background: #32353f !important; }
 
 /* ===== STATUS BADGES ===== */
 .badge {
@@ -327,10 +364,32 @@ tbody tr.duplicate-row .badge { border-color: var(--yellow-dup-border); }
   background: rgba(245, 217, 110, 0.15); color: #f5d96e;
   border: 1px solid rgba(245, 217, 110, 0.25);
 }
+.badge-batch-dup {
+  background: rgba(245, 217, 110, 0.15); color: #f5d96e;
+  border: 1px solid rgba(245, 217, 110, 0.25);
+}
+tbody tr.batch-dup-row .badge-batch-dup,
 tbody tr.duplicate-row .badge-duplicate {
   background: rgba(107, 89, 0, 0.15);
   color: var(--yellow-dup-text);
   border-color: rgba(107, 89, 0, 0.3);
+}
+.badge-master-dup {
+  background: rgba(245, 163, 110, 0.15); color: #f5a36e;
+  border: 1px solid rgba(245, 163, 110, 0.25);
+}
+tbody tr.master-dup-row .badge-master-dup {
+  background: rgba(107, 47, 0, 0.15);
+  color: var(--orange-dup-text);
+  border-color: rgba(107, 47, 0, 0.3);
+}
+.badge-master {
+  background: rgba(138, 143, 163, 0.12); color: #8a8fa3;
+  border: 1px solid rgba(138, 143, 163, 0.2);
+}
+.badge-in-master {
+  background: rgba(245, 163, 110, 0.12); color: var(--orange);
+  border: 1px solid rgba(251, 146, 60, 0.2);
 }
 
 /* ===== STATS BAR ===== */
@@ -383,6 +442,12 @@ tbody tr.duplicate-row .badge-duplicate {
 }
 .legend-swatch.swatch-dup {
   background: var(--yellow-dup); border-color: var(--yellow-dup-border);
+}
+.legend-swatch.swatch-master-dup {
+  background: var(--orange-dup); border-color: var(--orange-dup-border);
+}
+.legend-swatch.swatch-master {
+  background: var(--gray-master); border-color: var(--gray-master-border);
 }
 
 /* ===== TOAST ===== */

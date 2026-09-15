@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Literature Screening & Retrieval Pipeline — Upload your research file, screen for duplicates, resolve DOIs and find open-access PDFs. Runs entirely in your browser." />
+  <meta name="description" content="Literature Screening & Retrieval Pipeline — Upload master + weekly input, detect duplicates, resolve DOIs and find open-access PDFs. Runs entirely in your browser." />
   <title>Literature Screening Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,25 +14,40 @@
   <div class="bg-glow"></div>
 
   <div class="app-container">
-    <!-- Header -->
     <header class="header">
       <h1>📚 Literature Screening Pipeline</h1>
-      <p>Upload your research file, screen for duplicates, resolve DOIs &amp; find open-access PDFs — runs entirely in your browser</p>
+      <p>Upload your master file &amp; weekly input — duplicates are detected, DOIs resolved &amp; open-access PDFs found</p>
     </header>
 
     <!-- Upload Card -->
     <div class="card" id="upload-card">
       <div class="card-title"><span class="icon">📄</span> Upload &amp; Configure</div>
-      <div class="upload-row">
-        <!-- Dropzone -->
-        <div class="dropzone" id="dropzone" tabindex="0">
-          <span class="dropzone-icon">⬆️</span>
-          <div class="dropzone-text">
-            <strong>Drag &amp; drop</strong> your Excel or CSV file here<br />
-            or <strong>click to browse</strong>
+
+      <div class="upload-row three-col">
+        <!-- Master Dropzone -->
+        <div>
+          <div class="dropzone-label">📂 Master File <span class="optional-tag">(optional — skip on first run)</span></div>
+          <div class="dropzone" id="master-dropzone" tabindex="0">
+            <span class="dropzone-icon">📁</span>
+            <div class="dropzone-text">
+              Drop your <strong>master file</strong> here<br />or <strong>click to browse</strong>
+            </div>
+            <input type="file" id="master-file-input" accept=".xlsx,.xls,.csv" />
+            <div class="file-selected" id="master-file-name" style="display:none"></div>
           </div>
-          <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
-          <div class="file-selected" id="file-name" style="display:none"></div>
+        </div>
+
+        <!-- Weekly Dropzone -->
+        <div>
+          <div class="dropzone-label">📥 Weekly Input <span style="color:var(--red);font-weight:400;text-transform:none">(required)</span></div>
+          <div class="dropzone" id="weekly-dropzone" tabindex="0">
+            <span class="dropzone-icon">⬆️</span>
+            <div class="dropzone-text">
+              Drop your <strong>weekly input</strong> here<br />or <strong>click to browse</strong>
+            </div>
+            <input type="file" id="weekly-file-input" accept=".xlsx,.xls,.csv" />
+            <div class="file-selected" id="weekly-file-name" style="display:none"></div>
+          </div>
         </div>
 
         <!-- Settings -->
@@ -40,6 +55,10 @@
           <div class="form-group">
             <label for="email-input">Unpaywall Email (required)</label>
             <input type="email" id="email-input" placeholder="you@example.com" />
+          </div>
+          <div class="form-group">
+            <label for="batch-input">Batch Label</label>
+            <input type="text" id="batch-input" placeholder="e.g. Week 2, Sep 14 2024" />
           </div>
           <div class="form-group">
             <label for="sheet-input">Sheet Name (optional)</label>
@@ -57,11 +76,11 @@
     <!-- Processing Overlay -->
     <div class="processing-overlay" id="processing-overlay">
       <div class="spinner"></div>
-      <div class="processing-text">Processing your literature file…</div>
+      <div class="processing-text">Processing your literature files…</div>
       <div class="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
-      <div class="processing-status" id="processing-status">Reading file</div>
+      <div class="processing-status" id="processing-status">Reading files</div>
     </div>
 
     <!-- Results -->
@@ -74,37 +93,45 @@
         <div class="legend">
           <span style="font-weight:600;color:var(--text-secondary)">Legend:</span>
           <div class="legend-item">
+            <span class="legend-swatch swatch-master-dup"></span>
+            <span>Already in Master</span>
+          </div>
+          <div class="legend-item">
             <span class="legend-swatch swatch-dup"></span>
-            <span>Duplicate Record</span>
+            <span>Batch Duplicate</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-swatch swatch-master"></span>
+            <span>Master Entry</span>
           </div>
         </div>
 
         <div class="tab-header">
-          <button class="tab-btn active" data-tab="screening">Screening Output</button>
-          <button class="tab-btn" data-tab="log">Download Log</button>
+          <button class="tab-btn active" data-tab="all">All Records</button>
+          <button class="tab-btn" data-tab="new">New Only</button>
           <button class="tab-btn" data-tab="purchase">Purchase List</button>
         </div>
 
-        <!-- Screening Tab -->
-        <div class="tab-content active" id="tab-screening">
+        <!-- All Records Tab -->
+        <div class="tab-content active" id="tab-all">
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>UI</th><th>Title</th><th>DOI</th><th>Duplicate</th><th>Reason</th></tr>
+                <tr><th>Source</th><th>UI</th><th>Title</th><th>DOI</th><th>Status</th><th>Duplicate</th><th>Reason</th><th>Batch</th></tr>
               </thead>
-              <tbody id="screening-body"></tbody>
+              <tbody id="all-body"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Download Log Tab -->
-        <div class="tab-content" id="tab-log">
+        <!-- New Only Tab -->
+        <div class="tab-content" id="tab-new">
           <div class="table-wrapper">
             <table>
               <thead>
-                <tr><th>UI</th><th>Title</th><th>DOI</th><th>Duplicate</th><th>Status</th><th>OA Source</th><th>Publisher</th><th>Notes</th></tr>
+                <tr><th>UI</th><th>Title</th><th>DOI</th><th>Status</th><th>OA Source</th><th>Publisher</th><th>Notes</th></tr>
               </thead>
-              <tbody id="log-body"></tbody>
+              <tbody id="new-body"></tbody>
             </table>
           </div>
         </div>
@@ -121,7 +148,7 @@
           </div>
           <div class="empty-state" id="purchase-empty" style="display:none">
             <span class="empty-icon">🎉</span>
-            <p>No articles require purchase!</p>
+            <p>No new articles require purchase!</p>
           </div>
         </div>
       </div>
@@ -130,25 +157,32 @@
       <div class="card download-section visible" id="download-section">
         <div class="card-title"><span class="icon">⬇️</span> Download Output Files</div>
         <div class="download-grid">
+          <a class="download-card" href="#" id="dl-master">
+            <span class="dl-icon">📕</span>
+            <div class="dl-info">
+              <div class="dl-name">Updated Master</div>
+              <div class="dl-desc">Re-upload this next week</div>
+            </div>
+          </a>
           <a class="download-card" href="#" id="dl-screening">
             <span class="dl-icon">📗</span>
             <div class="dl-info">
               <div class="dl-name">Screening Output</div>
-              <div class="dl-desc">Full screening workbook with yellow highlights</div>
+              <div class="dl-desc">All records with highlights</div>
             </div>
           </a>
           <a class="download-card" href="#" id="dl-log">
             <span class="dl-icon">📘</span>
             <div class="dl-info">
-              <div class="dl-name">Download Log</div>
-              <div class="dl-desc">Detailed status for every article</div>
+              <div class="dl-name">New Entries Log</div>
+              <div class="dl-desc">Status for new articles only</div>
             </div>
           </a>
           <a class="download-card" href="#" id="dl-purchase">
             <span class="dl-icon">📙</span>
             <div class="dl-info">
               <div class="dl-name">Purchase List</div>
-              <div class="dl-desc">Articles needing purchase</div>
+              <div class="dl-desc">New articles needing purchase</div>
             </div>
           </a>
         </div>
@@ -156,7 +190,6 @@
     </div>
   </div>
 
-  <!-- Libraries (CDN) -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="app.js"></script>

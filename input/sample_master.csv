@@ -1,0 +1,7 @@
+UI,Title,DOI,Status,Publisher,OA Source,Date Added,Batch
+UI001,Attention Is All You Need,10.48550/arXiv.1706.03762,MANUAL_REVIEW,,,2024-09-07,Week 1
+UI002,BERT Pre-training of Deep Bidirectional Transformers,10.48550/arXiv.1810.04805,MANUAL_REVIEW,,,2024-09-07,Week 1
+UI003,Deep Residual Learning for Image Recognition,10.1109/CVPR.2016.90,MANUAL_REVIEW,,,2024-09-07,Week 1
+UI004,ImageNet Large Scale Visual Recognition Challenge,10.1007/s11263-015-0816-y,PURCHASE_REQUIRED,Springer Science and Business Media LLC,,2024-09-07,Week 1
+UI005,Dropout A Simple Way to Prevent Neural Networks from Overfitting,10.5555/2627435.2670313,MANUAL_REVIEW,,,2024-09-07,Week 1
+UI006,Batch Normalization Accelerating Deep Network Training,10.48550/arXiv.1502.03167,MANUAL_REVIEW,,,2024-09-07,Week 1

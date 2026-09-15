@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Literature Screening & Retrieval Pipeline — Upload your research file, screen for duplicates, and download results." />
   <title>Literature Screening Pipeline</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,402 +10,221 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-  <!-- Animated background glow -->
   <div class="bg-glow"></div>
-
   <div class="app-container">
-    <!-- Header -->
     <header class="header">
       <h1>📚 Literature Screening Pipeline</h1>
-      <p>Upload your research file, screen for duplicates, resolve DOIs &amp; find open-access PDFs</p>
+      <p>Upload your master file &amp; weekly input — duplicates are detected, DOIs resolved &amp; open-access PDFs found</p>
     </header>
 
-    <!-- Upload Card -->
     <div class="card" id="upload-card">
       <div class="card-title"><span class="icon">📄</span> Upload &amp; Configure</div>
-      <div class="upload-row">
-        <!-- Dropzone -->
-        <div class="dropzone" id="dropzone" tabindex="0">
-          <span class="dropzone-icon">⬆️</span>
-          <div class="dropzone-text">
-            <strong>Drag &amp; drop</strong> your Excel or CSV file here<br />
-            or <strong>click to browse</strong>
+      <div class="upload-row three-col">
+        <div>
+          <div class="dropzone-label">📂 Master File <span class="optional-tag">(optional)</span></div>
+          <div class="dropzone" id="master-dropzone" tabindex="0">
+            <span class="dropzone-icon">📁</span>
+            <div class="dropzone-text">Drop <strong>master file</strong> here<br />or <strong>click to browse</strong></div>
+            <input type="file" id="master-file-input" accept=".xlsx,.xls,.csv" />
+            <div class="file-selected" id="master-file-name" style="display:none"></div>
           </div>
-          <input type="file" id="file-input" accept=".xlsx,.xls,.csv" />
-          <div class="file-selected" id="file-name" style="display:none"></div>
         </div>
-
-        <!-- Settings -->
+        <div>
+          <div class="dropzone-label">📥 Weekly Input <span style="color:var(--red);font-weight:400;text-transform:none">(required)</span></div>
+          <div class="dropzone" id="weekly-dropzone" tabindex="0">
+            <span class="dropzone-icon">⬆️</span>
+            <div class="dropzone-text">Drop <strong>weekly input</strong> here<br />or <strong>click to browse</strong></div>
+            <input type="file" id="weekly-file-input" accept=".xlsx,.xls,.csv" />
+            <div class="file-selected" id="weekly-file-name" style="display:none"></div>
+          </div>
+        </div>
         <div class="settings-panel">
           <div class="form-group">
-            <label for="email-input">Unpaywall Email (required)</label>
-            <input type="email" id="email-input" placeholder="you@example.com" value="" />
+            <label for="email-input">Unpaywall Email</label>
+            <input type="email" id="email-input" placeholder="you@example.com" />
           </div>
           <div class="form-group">
-            <label for="sheet-input">Sheet Name (optional)</label>
-            <input type="text" id="sheet-input" placeholder="Leave blank for first sheet" />
+            <label for="batch-input">Batch Label</label>
+            <input type="text" id="batch-input" placeholder="e.g. Week 2" />
           </div>
           <div class="btn-row">
-            <button class="btn btn-primary" id="run-btn" disabled>
-              <span id="run-btn-icon">🚀</span> Run Pipeline
-            </button>
+            <button class="btn btn-primary" id="run-btn" disabled>🚀 Run Pipeline</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Processing Overlay -->
     <div class="processing-overlay" id="processing-overlay">
       <div class="spinner"></div>
-      <div class="processing-text">Processing your literature file…</div>
-      <div class="processing-status" id="processing-status">Uploading file</div>
+      <div class="processing-text">Processing…</div>
+      <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
+      <div class="processing-status" id="processing-status">Reading files</div>
     </div>
 
-    <!-- Results -->
     <div class="tabs-container" id="results-section">
       <div class="card">
         <div class="card-title"><span class="icon">📊</span> Screening Results</div>
-
-        <!-- Stats bar -->
         <div class="stats-bar" id="stats-bar"></div>
-
-        <!-- Legend -->
         <div class="legend">
           <span style="font-weight:600;color:var(--text-secondary)">Legend:</span>
-          <div class="legend-item">
-            <span class="legend-swatch swatch-dup"></span>
-            <span>Duplicate Record</span>
-          </div>
+          <div class="legend-item"><span class="legend-swatch swatch-master-dup"></span><span>Already in Master</span></div>
+          <div class="legend-item"><span class="legend-swatch swatch-dup"></span><span>Batch Duplicate</span></div>
+          <div class="legend-item"><span class="legend-swatch swatch-master"></span><span>Master Entry</span></div>
         </div>
-
-        <!-- Tabs -->
-        <div class="tab-header" id="tab-header">
-          <button class="tab-btn active" data-tab="screening">Screening Output</button>
-          <button class="tab-btn" data-tab="log">Download Log</button>
+        <div class="tab-header">
+          <button class="tab-btn active" data-tab="all">All Records</button>
+          <button class="tab-btn" data-tab="new">New Only</button>
           <button class="tab-btn" data-tab="purchase">Purchase List</button>
         </div>
-
-        <!-- Screening Tab -->
-        <div class="tab-content active" id="tab-screening">
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>UI</th>
-                  <th>Title</th>
-                  <th>DOI</th>
-                  <th>Duplicate</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
-              <tbody id="screening-body"></tbody>
-            </table>
-          </div>
+        <div class="tab-content active" id="tab-all">
+          <div class="table-wrapper"><table>
+            <thead><tr><th>Source</th><th>UI</th><th>Title</th><th>DOI</th><th>Status</th><th>Dup</th><th>Reason</th><th>Batch</th></tr></thead>
+            <tbody id="all-body"></tbody>
+          </table></div>
         </div>
-
-        <!-- Download Log Tab -->
-        <div class="tab-content" id="tab-log">
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>UI</th>
-                  <th>Title</th>
-                  <th>DOI</th>
-                  <th>Duplicate</th>
-                  <th>Status</th>
-                  <th>OA Source</th>
-                  <th>Publisher</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody id="log-body"></tbody>
-            </table>
-          </div>
+        <div class="tab-content" id="tab-new">
+          <div class="table-wrapper"><table>
+            <thead><tr><th>UI</th><th>Title</th><th>DOI</th><th>Status</th><th>OA Source</th><th>Publisher</th><th>Notes</th></tr></thead>
+            <tbody id="new-body"></tbody>
+          </table></div>
         </div>
-
-        <!-- Purchase Tab -->
         <div class="tab-content" id="tab-purchase">
-          <div class="table-wrapper" id="purchase-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>UI</th>
-                  <th>Title</th>
-                  <th>DOI</th>
-                  <th>Publisher</th>
-                  <th>Purchase Link</th>
-                  <th>Cost</th>
-                </tr>
-              </thead>
-              <tbody id="purchase-body"></tbody>
-            </table>
-          </div>
+          <div class="table-wrapper" id="purchase-wrapper"><table>
+            <thead><tr><th>UI</th><th>Title</th><th>DOI</th><th>Publisher</th><th>Link</th><th>Cost</th></tr></thead>
+            <tbody id="purchase-body"></tbody>
+          </table></div>
           <div class="empty-state" id="purchase-empty" style="display:none">
-            <span class="empty-icon">🎉</span>
-            <p>No articles require purchase — all are available via open access!</p>
+            <span class="empty-icon">🎉</span><p>No new articles require purchase!</p>
           </div>
         </div>
       </div>
-
-      <!-- Downloads -->
-      <div class="card download-section visible" id="download-section">
+      <div class="card download-section visible">
         <div class="card-title"><span class="icon">⬇️</span> Download Output Files</div>
         <div class="download-grid">
-          <a class="download-card" href="/download/Screening_Output.xlsx" id="dl-screening">
-            <span class="dl-icon">📗</span>
-            <div class="dl-info">
-              <div class="dl-name">Screening Output</div>
-              <div class="dl-desc">Full screening workbook with highlights</div>
-            </div>
-          </a>
-          <a class="download-card" href="/download/Download_Log.xlsx" id="dl-log">
-            <span class="dl-icon">📘</span>
-            <div class="dl-info">
-              <div class="dl-name">Download Log</div>
-              <div class="dl-desc">Detailed status for every article</div>
-            </div>
-          </a>
-          <a class="download-card" href="/download/Purchase_List.xlsx" id="dl-purchase">
-            <span class="dl-icon">📙</span>
-            <div class="dl-info">
-              <div class="dl-name">Purchase List</div>
-              <div class="dl-desc">Articles needing purchase</div>
-            </div>
-          </a>
-          <a class="download-card" href="/download/Literature_PDFs.zip" id="dl-pdfs">
-            <span class="dl-icon">📦</span>
-            <div class="dl-info">
-              <div class="dl-name">PDFs Archive</div>
-              <div class="dl-desc">All downloaded PDFs (ZIP)</div>
-            </div>
-          </a>
+          <a class="download-card" href="/download/Updated_Master.xlsx" id="dl-master"><span class="dl-icon">📕</span><div class="dl-info"><div class="dl-name">Updated Master</div><div class="dl-desc">Re-upload next week</div></div></a>
+          <a class="download-card" href="/download/Screening_Output.xlsx" id="dl-screening"><span class="dl-icon">📗</span><div class="dl-info"><div class="dl-name">Screening Output</div><div class="dl-desc">All records with highlights</div></div></a>
+          <a class="download-card" href="/download/Download_Log.xlsx" id="dl-log"><span class="dl-icon">📘</span><div class="dl-info"><div class="dl-name">New Entries Log</div><div class="dl-desc">New article statuses</div></div></a>
+          <a class="download-card" href="/download/Purchase_List.xlsx" id="dl-purchase"><span class="dl-icon">📙</span><div class="dl-info"><div class="dl-name">Purchase List</div><div class="dl-desc">Articles needing purchase</div></div></a>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    /* ===== DOM refs ===== */
-    const dropzone      = document.getElementById('dropzone');
-    const fileInput      = document.getElementById('file-input');
-    const fileNameEl     = document.getElementById('file-name');
-    const emailInput     = document.getElementById('email-input');
-    const sheetInput     = document.getElementById('sheet-input');
-    const runBtn         = document.getElementById('run-btn');
-    const overlay        = document.getElementById('processing-overlay');
-    const procStatus     = document.getElementById('processing-status');
-    const resultsSection = document.getElementById('results-section');
-    const statsBar       = document.getElementById('stats-bar');
+    /* DOM refs */
+    let masterFileData = null, weeklyFileData = null;
 
-    let selectedFile = null;
-
-    /* ===== File selection ===== */
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('keydown', e => { if (e.key === 'Enter') fileInput.click(); });
-
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropzone.classList.remove('drag-over');
-      if (e.dataTransfer.files.length) {
-        selectFile(e.dataTransfer.files[0]);
-      }
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDZ('master-dropzone','master-file-input','master-file-name','master');
+      setupDZ('weekly-dropzone','weekly-file-input','weekly-file-name','weekly');
+      document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('tab-' + b.dataset.tab).classList.add('active');
+      }));
+      document.getElementById('email-input').addEventListener('input', updateBtn);
+      document.getElementById('run-btn').addEventListener('click', runPipeline);
     });
 
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) selectFile(fileInput.files[0]);
-    });
-
-    function selectFile(file) {
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (!['xlsx', 'xls', 'csv'].includes(ext)) {
-        showToast('Please select an .xlsx, .xls, or .csv file.');
-        return;
-      }
-      selectedFile = file;
-      fileNameEl.textContent = '✅ ' + file.name;
-      fileNameEl.style.display = 'block';
-      updateRunBtn();
+    function setupDZ(dzId, fiId, fnId, type) {
+      const dz = document.getElementById(dzId), fi = document.getElementById(fiId);
+      dz.addEventListener('click', () => fi.click());
+      dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+      dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+      dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if(e.dataTransfer.files.length) pick(type,e.dataTransfer.files[0],fnId); });
+      fi.addEventListener('change', () => { if(fi.files.length) pick(type,fi.files[0],fnId); });
     }
 
-    emailInput.addEventListener('input', updateRunBtn);
-
-    function updateRunBtn() {
-      runBtn.disabled = !(selectedFile && emailInput.value.trim());
+    function pick(type, file, fnId) {
+      if(type==='master') masterFileData=file; else weeklyFileData=file;
+      const el=document.getElementById(fnId); el.textContent='✅ '+file.name; el.style.display='block';
+      updateBtn();
     }
 
-    /* ===== Run Pipeline ===== */
-    runBtn.addEventListener('click', async () => {
-      if (!selectedFile || !emailInput.value.trim()) return;
+    function updateBtn() {
+      document.getElementById('run-btn').disabled = !(weeklyFileData && document.getElementById('email-input').value.trim());
+    }
 
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('email', emailInput.value.trim());
-      if (sheetInput.value.trim()) formData.append('sheet', sheetInput.value.trim());
-
+    async function runPipeline() {
+      if(!weeklyFileData) return;
+      const email = document.getElementById('email-input').value.trim();
+      if(!email) return;
+      const batch = document.getElementById('batch-input').value.trim() || 'Batch '+new Date().toLocaleDateString();
+      const overlay = document.getElementById('processing-overlay');
+      const status = document.getElementById('processing-status');
       overlay.classList.add('active');
-      procStatus.textContent = 'Uploading file…';
-      resultsSection.classList.remove('visible');
+      status.textContent = 'Uploading files…';
+      document.getElementById('results-section').classList.remove('visible');
 
       try {
-        procStatus.textContent = 'Running pipeline — this may take a minute…';
-        const resp = await fetch('/upload', { method: 'POST', body: formData });
+        const fd = new FormData();
+        fd.append('weekly', weeklyFileData);
+        if(masterFileData) fd.append('master', masterFileData);
+        fd.append('email', email);
+        fd.append('batch', batch);
 
-        if (!resp.ok) {
-          const err = await resp.json();
-          throw new Error(err.error || 'Pipeline failed');
-        }
-
-        procStatus.textContent = 'Rendering results…';
+        status.textContent = 'Processing — this may take a minute…';
+        const resp = await fetch('/upload', { method:'POST', body:fd });
+        if(!resp.ok) { const e=await resp.json(); throw new Error(e.error||'Failed'); }
         const data = await resp.json();
         renderResults(data);
-
         overlay.classList.remove('active');
-        resultsSection.classList.add('visible');
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-      } catch (err) {
+        const rs = document.getElementById('results-section');
+        rs.classList.add('visible');
+        rs.scrollIntoView({ behavior:'smooth', block:'start' });
+      } catch(err) {
         overlay.classList.remove('active');
         showToast(err.message);
       }
-    });
+    }
 
-    /* ===== Render ===== */
     function renderResults(data) {
       /* Stats */
-      const counts = {};
-      (data.log || []).forEach(r => {
-        counts[r.Status] = (counts[r.Status] || 0) + 1;
-      });
-      const totalDups = (data.screening || []).filter(r => r.Duplicate).length;
+      const sb = document.getElementById('stats-bar'); sb.innerHTML='';
+      const s = data.stats;
+      addS(sb, s.totalCombined,'Total Combined'); addS(sb, s.masterCount,'In Master');
+      addS(sb, s.weeklyCount,'Weekly Input'); addS(sb, s.masterDupCount,'🟠 In Master Already');
+      addS(sb, s.batchDupCount,'🟡 Batch Dup'); addS(sb, s.newCount,'🆕 New');
 
-      statsBar.innerHTML = '';
-      addStat('Total', data.screening ? data.screening.length : 0, '');
-      addStat('Duplicates', totalDups, 'badge-duplicate');
-      for (const [status, count] of Object.entries(counts)) {
-        addStat(formatStatus(status), count, badgeClass(status));
-      }
-
-      /* Screening table */
-      const sBody = document.getElementById('screening-body');
-      sBody.innerHTML = '';
-      (data.screening || []).forEach(row => {
+      /* All records */
+      const ab = document.getElementById('all-body'); ab.innerHTML='';
+      (data.allRecords||[]).forEach(r => {
         const tr = document.createElement('tr');
-        if (row.Duplicate) tr.classList.add('duplicate-row');
-        tr.innerHTML = `
-          <td>${esc(row.UI)}</td>
-          <td>${esc(row.Title)}</td>
-          <td>${doiLink(row.DOI)}</td>
-          <td>${row.Duplicate ? '<span class="badge badge-duplicate">Duplicate</span>' : '—'}</td>
-          <td>${esc(row['Duplicate Reason'] || '')}</td>
-        `;
-        sBody.appendChild(tr);
+        if(r._rowType==='master') tr.className='master-row';
+        else if(r._rowType==='masterDup') tr.className='master-dup-row';
+        else if(r._rowType==='batchDup') tr.className='batch-dup-row';
+        tr.innerHTML=`<td>${srcBadge(r)}</td><td>${e(r.UI)}</td><td>${e(r.Title)}</td><td>${dl(r.DOI)}</td><td>${stBadge(r.Status)}</td><td>${r.Duplicate?'⚠️':'—'}</td><td>${e(r['Duplicate Reason']||'')}</td><td>${e(r.Batch||'')}</td>`;
+        ab.appendChild(tr);
       });
 
-      /* Log table */
-      const lBody = document.getElementById('log-body');
-      lBody.innerHTML = '';
-      (data.log || []).forEach(row => {
+      /* New only */
+      const nb = document.getElementById('new-body'); nb.innerHTML='';
+      (data.newEntries||[]).forEach(r => {
         const tr = document.createElement('tr');
-        if (row.Duplicate) tr.classList.add('duplicate-row');
-        tr.innerHTML = `
-          <td>${esc(row.UI)}</td>
-          <td>${esc(row.Title)}</td>
-          <td>${doiLink(row.DOI)}</td>
-          <td>${row.Duplicate ? '<span class="badge badge-duplicate">Duplicate</span>' : '—'}</td>
-          <td><span class="badge ${badgeClass(row.Status)}">${formatStatus(row.Status)}</span></td>
-          <td>${esc(row['OA Source'] || '')}</td>
-          <td>${esc(row.Publisher || '')}</td>
-          <td>${esc(row.Notes || '')}</td>
-        `;
-        lBody.appendChild(tr);
+        if(r._rowType==='masterDup') tr.className='master-dup-row';
+        else if(r._rowType==='batchDup') tr.className='batch-dup-row';
+        tr.innerHTML=`<td>${e(r.UI)}</td><td>${e(r.Title)}</td><td>${dl(r.DOI)}</td><td>${stBadge(r.Status)}</td><td>${e(r['OA Source']||'')}</td><td>${e(r.Publisher||'')}</td><td>${e(r.Notes||'')}</td>`;
+        nb.appendChild(tr);
       });
 
-      /* Purchase table */
-      const pBody = document.getElementById('purchase-body');
-      const pEmpty = document.getElementById('purchase-empty');
-      const pWrap  = document.getElementById('purchase-wrapper');
-      pBody.innerHTML = '';
-      const purchases = data.purchase || [];
-      if (purchases.length === 0) {
-        pWrap.style.display = 'none';
-        pEmpty.style.display = 'block';
-      } else {
-        pWrap.style.display = 'block';
-        pEmpty.style.display = 'none';
-        purchases.forEach(row => {
-          const tr = document.createElement('tr');
-          const linkCol = row['Website/site link for purchase'] || row['Publisher URL'] || '';
-          tr.innerHTML = `
-            <td>${esc(row.UI)}</td>
-            <td>${esc(row.Title)}</td>
-            <td>${doiLink(row.DOI)}</td>
-            <td>${esc(row.Publisher || '')}</td>
-            <td>${linkCol ? `<a href="${esc(linkCol)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(linkCol)}</a>` : '—'}</td>
-            <td>${esc(row['Purchase Cost'] || '')}</td>
-          `;
-          pBody.appendChild(tr);
-        });
-      }
+      /* Purchase */
+      const pb=document.getElementById('purchase-body'), pw=document.getElementById('purchase-wrapper'), pe=document.getElementById('purchase-empty');
+      pb.innerHTML='';
+      const pl=data.purchase||[];
+      if(!pl.length){pw.style.display='none';pe.style.display='block';}
+      else{pw.style.display='block';pe.style.display='none';
+        pl.forEach(r=>{const tr=document.createElement('tr');const lk=r['Website/site link for purchase']||'';
+          tr.innerHTML=`<td>${e(r.UI)}</td><td>${e(r.Title)}</td><td>${dl(r.DOI)}</td><td>${e(r.Publisher||'')}</td><td>${lk?`<a href="${e(lk)}" target="_blank" style="color:var(--accent)">${e(lk)}</a>`:'—'}</td><td>${e(r['Purchase Cost']||'')}</td>`;
+          pb.appendChild(tr);});}
     }
 
-    function addStat(label, count, cls) {
-      const div = document.createElement('div');
-      div.className = 'stat-item';
-      div.innerHTML = `<span class="stat-count">${count}</span><span class="stat-label">${label}</span>`;
-      statsBar.appendChild(div);
-    }
-
-    function badgeClass(status) {
-      const map = {
-        'DOWNLOADED':       'badge-downloaded',
-        'PURCHASE_REQUIRED':'badge-purchase',
-        'MANUAL_REVIEW':    'badge-review',
-        'OA_DOWNLOAD_FAILED':'badge-oa-failed',
-        'ERROR':            'badge-error',
-      };
-      return map[status] || 'badge-review';
-    }
-
-    function formatStatus(s) {
-      return (s || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-                      .replace('Oa ', 'OA ');
-    }
-
-    function esc(str) {
-      const d = document.createElement('div');
-      d.textContent = str || '';
-      return d.innerHTML;
-    }
-
-    function doiLink(doi) {
-      if (!doi) return '—';
-      const clean = esc(doi);
-      return `<a href="https://doi.org/${clean}" target="_blank" rel="noopener" style="color:var(--accent);font-family:var(--font-mono);font-size:0.8rem">${clean}</a>`;
-    }
-
-    /* ===== Tabs ===== */
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      });
-    });
-
-    /* ===== Toast ===== */
-    function showToast(msg) {
-      const existing = document.querySelector('.toast');
-      if (existing) existing.remove();
-      const t = document.createElement('div');
-      t.className = 'toast';
-      t.textContent = '❌ ' + msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 6000);
-    }
+    function addS(c,n,l){const d=document.createElement('div');d.className='stat-item';d.innerHTML=`<span class="stat-count">${n}</span><span class="stat-label">${l}</span>`;c.appendChild(d);}
+    function srcBadge(r){const t=r._rowType;if(t==='master')return'<span class="badge badge-master">Master</span>';if(t==='masterDup')return'<span class="badge badge-master-dup">In Master</span>';if(t==='batchDup')return'<span class="badge badge-batch-dup">Batch Dup</span>';return'<span class="badge badge-downloaded">New</span>';}
+    function stBadge(s){if(!s)return'—';const m={'DOWNLOADED':'badge-downloaded','OA_AVAILABLE':'badge-downloaded','PURCHASE_REQUIRED':'badge-purchase','MANUAL_REVIEW':'badge-review','ERROR':'badge-error','ALREADY_IN_MASTER':'badge-in-master','BATCH_DUPLICATE':'badge-batch-dup'};return`<span class="badge ${m[s]||'badge-review'}">${(s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).replace('Oa ','OA ')}</span>`;}
+    function e(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+    function dl(doi){if(!doi)return'—';const c=e(doi);return`<a href="https://doi.org/${c}" target="_blank" style="color:var(--accent);font-family:var(--font-mono);font-size:0.8rem">${c}</a>`;}
+    function showToast(m){document.querySelectorAll('.toast').forEach(t=>t.remove());const t=document.createElement('div');t.className='toast';t.textContent='❌ '+m;document.body.appendChild(t);setTimeout(()=>t.remove(),6000);}
   </script>
 </body>
 </html>
